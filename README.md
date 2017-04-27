@@ -1,25 +1,18 @@
 speech-input
 ============
 
-Simple speech input for `<input>` and `<textarea>` elements — replaces the now defunct `x-webkit-speech` attribute
+Simple speech input for `<input>` elements — replaces the now defunct `x-webkit-speech` attribute
 
 ## Use:
 
 1. Include **speech-input.css** and **speech-input.js**
-2. Add a `speech-input` class to your `<input>` or `<textarea>`
+2. Add a `speech-input` class to your input field
 
 And you're done! Here's a demo:
 
 [![speech-input demo][1]][2]
 
 ## FAQ
-
-### Does it support recognition in other languages?
-Yes. It uses the value of the `lang` attribute on the `<html>` element by default. But you can override this by specifying a `lang` attribute on the input fields themselves. You may then also want to customize the "Speak now" text for that language with a `data-ready` attribute on that field:
-
-```html
-<input type="text" class="speech-input" lang="es" data-ready="Habla ahora">
-```
 
 ### Why does it keep asking me to allow the microphone?
 To have the microphone permissions persist, use https: http://stackoverflow.com/a/15999940/552067

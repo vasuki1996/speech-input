@@ -1,24 +1,72 @@
 /*global webkitSpeechRecognition */
+
 (function() {
 	'use strict';
 
 	// check for support (webkit only)
 	if (! ('webkitSpeechRecognition' in window) ) return;
 
-	var talkMsg = 'Speak now';
+	var talkMsg = 'start talking';
 
 	// seconds to wait for more input after last
 	var patience = 6;
 
 	function capitalize(str) {
-		return str.charAt(0).toUpperCase() + str.slice(1);
+		return str.length ? str[0].toUpperCase() + str.slice(1) : str;
 	}
+
+function speechOutput(str1) {	
+            var msg = new SpeechSynthesisUtterance();
+            msg.lang = 'en-US';
+            msg.rate = 10 / 10;
+            msg.pitch = 1;
+            if(str1=='What\'s your name' || str1=='What is your name') {
+		msg.text = 'Did i forget to introduce myself. Hi, i\'m xtron';
+	} else if(str1=='Get me the logo') {
+		msg.text = 'here is the logo';
+		window.open('../assets/img/logo.png','popUpWindow','height=400,width=600,left=10,top=10,,scrollbars=yes,menubar=no');
+	} else if(str1=='Fuck you' || str1=='Fuck you extron' || str1=='Fuck you babe') {
+		msg.text('dude, what\'s wrong with you, i\'m a robot');
+	} else if(str1=='Hello') {
+		var audio = new Audio('audio_file.mp3');
+		audio.play();
+	}
+	else {
+		msg.text = str1;
+	}
+            msg.onend = function (e) {
+                console.log('Finished in ' + event.elapsedTime + ' seconds.');
+            };
+		console.log(speechSynthesis);
+            speechSynthesis.speak(msg);
+	    window.location.href = '#modal-one';
+        };
+
+/*function cmdRecognize(string) {
+	if(string=='What\'s your name' || string=='What is your name') {
+		return 'Did i forget to introduce myself. Hi, i'm xtron';
+	} else {
+		return string;
+	}
+};*/
 
 	var inputEls = document.getElementsByClassName('speech-input');
 
 	[].forEach.call(inputEls, function(inputEl) {
-		var micBtn, micIcon, holderIcon, newWrapper;
-		var shouldCapitalize = true;
+		// create wrapper
+		var wrapper = document.createElement('div');
+		wrapper.classList.add('si-wrapper');
+
+		// create mic button
+		var micBtn = document.createElement('button');
+		micBtn.classList.add('si-btn');
+		micBtn.textContent = 'speech input';
+		var micIcon = document.createElement('span');
+		var holderIcon = document.createElement('span');
+		micIcon.classList.add('si-mic');
+		holderIcon.classList.add('si-holder');
+		micBtn.appendChild(micIcon);
+		micBtn.appendChild(holderIcon);
 
 		// gather inputEl data
 		var nextNode = inputEl.nextSibling;
@@ -26,60 +74,28 @@
 		var inputHeight = inputEl.offsetHeight;
 		var inputRightBorder = parseInt(getComputedStyle(inputEl).borderRightWidth, 10);
 		var buttonSize = 0.8 * inputHeight;
-		var buttonTop = 0.1 * inputHeight;
+		// Size bounds (useful for textareas).
+		if (buttonSize > 26) buttonSize = 26;
 
-		// max size for textareas
-		if (inputEl.tagName === 'TEXTAREA') {
-			if (buttonTop > 6.5) buttonTop = 6.5;
-			if (buttonSize > 26) buttonSize = 26;
-		}
+		// append mic and input to wrapper
+		wrapper.appendChild(parent.removeChild(inputEl));
+		wrapper.appendChild(micBtn);
 
-		// create wrapper if not present
-		var wrapper = inputEl.parentNode;
-		if (!wrapper.classList.contains('si-wrapper')) {
-			wrapper = document.createElement('div');
-			wrapper.classList.add('si-wrapper');
-			wrapper.appendChild(parent.removeChild(inputEl));
-			newWrapper = true;
-		}
-
-		// create mic button if not present
-		var micBtn = wrapper.querySelector('.si-btn');
-		if (!micBtn) {
-			micBtn = document.createElement('button');
-			micBtn.classList.add('si-btn');
-			micBtn.textContent = 'speech input';
-			var micIcon = document.createElement('span');
-			var holderIcon = document.createElement('span');
-			micIcon.classList.add('si-mic');
-			holderIcon.classList.add('si-holder');
-			micBtn.appendChild(micIcon);
-			micBtn.appendChild(holderIcon);
-			wrapper.appendChild(micBtn);
-
-			// size and position mic and input
-			micBtn.style.cursor = 'pointer';
-			micBtn.style.top = buttonTop + 'px';
-			micBtn.style.height = micBtn.style.width = buttonSize + 'px';
-			inputEl.style.paddingRight = buttonSize - inputRightBorder + 'px';
-		}
+		// size and position mic and input
+		micBtn.style.top = 0.1 * inputHeight + 'px';
+		micBtn.style.height = micBtn.style.width = buttonSize + 'px';
+		inputEl.style.paddingRight = buttonSize - inputRightBorder + 'px';
 
 		// append wrapper where input was
-		if (newWrapper) parent.insertBefore(wrapper, nextNode);
+		parent.insertBefore(wrapper, nextNode);
 
 		// setup recognition
-		var prefix = '';
-		var isSentence;
+		var finalTranscript = '';
 		var recognizing = false;
 		var timeout;
 		var oldPlaceholder = null;
 		var recognition = new webkitSpeechRecognition();
 		recognition.continuous = true;
-		recognition.interimResults = true;
-
-		// if lang attribute is set on field use that
-		// (defaults to use the lang of the root element)
-		if (inputEl.lang) recognition.lang = inputEl.lang;
 
 		function restartTimer() {
 			timeout = setTimeout(function() {
@@ -89,7 +105,7 @@
 
 		recognition.onstart = function() {
 			oldPlaceholder = inputEl.placeholder;
-			inputEl.placeholder = inputEl.dataset.ready || talkMsg;
+			inputEl.placeholder = talkMsg;
 			recognizing = true;
 			micBtn.classList.add('listening');
 			restartTimer();
@@ -102,64 +118,26 @@
 			if (oldPlaceholder !== null) inputEl.placeholder = oldPlaceholder;
 		};
 
-		var finalTranscript = '';
 		recognition.onresult = function(event) {
 			clearTimeout(timeout);
-
-			// get SpeechRecognitionResultList object
-			var resultList = event.results;
-
-			// go through each SpeechRecognitionResult object in the list
-			var interimTranscript = '';
-			for (var i = event.resultIndex; i < resultList.length; ++i) {
-				var result = resultList[i];
-
-				// get this result's first SpeechRecognitionAlternative object
-				var firstAlternative = result[0];
-
-				if (result.isFinal) {
-					finalTranscript += firstAlternative.transcript;
-				} else {
-					interimTranscript += firstAlternative.transcript;
+			for (var i = event.resultIndex; i < event.results.length; ++i) {
+				if (event.results[i].isFinal) {
+					finalTranscript += event.results[i][0].transcript;
 				}
 			}
-
-			// capitalize transcript if start of new sentence
-			var transcript = finalTranscript || interimTranscript;
-			transcript = !prefix || isSentence ? capitalize(transcript) : transcript;
-
-			// append transcript to cached input value
-			inputEl.value = prefix + transcript;
-
-			// set cursur and scroll to end
-			inputEl.focus();
-			if (inputEl.tagName === 'INPUT') {
-				inputEl.scrollLeft = inputEl.scrollWidth;
-			} else {
-				inputEl.scrollTop = inputEl.scrollHeight;
-			}
-
+			finalTranscript = capitalize(finalTranscript);
+			inputEl.value = finalTranscript;
+			speechOutput(finalTranscript);
 			restartTimer();
 		};
 
 		micBtn.addEventListener('click', function(event) {
 			event.preventDefault();
-
-			// stop and exit if already going
 			if (recognizing) {
 				recognition.stop();
 				return;
 			}
-
-			// Cache current input value which the new transcript will be appended to
-			var endsWithWhitespace = inputEl.value.slice(-1).match(/\s/);
-			prefix = !inputEl.value || endsWithWhitespace ? inputEl.value : inputEl.value + ' ';
-
-			// check if value ends with a sentence
-			isSentence = prefix.trim().slice(-1).match(/[\.\?\!]/);
-
-			// restart recognition
-			finalTranscript = '';
+			inputEl.value = finalTranscript = '';
 			recognition.start();
 		}, false);
 	});
