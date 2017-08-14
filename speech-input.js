@@ -28,8 +28,9 @@ function speechOutput(str1) {
 	} else if(str1=='Fuck you' || str1=='Fuck you extron' || str1=='Fuck you babe') {
 		msg.text('dude, what\'s wrong with you, i\'m a robot');
 	} else if(str1=='Hello') {
-		var audio = new Audio('audio_file.mp3');
-		audio.play();
+		//var audio = new Audio('audio_file.mp3');
+		//audio.play();
+		msg.text = 'Hello How do you do?';
 	}
 	else {
 		msg.text = str1;
